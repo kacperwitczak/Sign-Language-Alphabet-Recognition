@@ -1,7 +1,7 @@
 import os
 import cv2
 import mediapipe as mp
-
+from concurrent.futures import ThreadPoolExecutor
 
 class HandDetector:
     def __init__(self):
@@ -19,10 +19,8 @@ class HandDetector:
     def close(self):
         self.hands.close()
 
-
 class VideoProcessor:
-    def __init__(self, folder_path):
-        self.folder_path = folder_path
+    def __init__(self):
         self.hand_detector = HandDetector()
 
     def process_video(self, video_path):
@@ -43,35 +41,41 @@ class VideoProcessor:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+        print("Processed: ", video_path)
         cap.release()
-        cv2.destroyAllWindows()
 
-    def process_videos_in_folder_recursive(self, folder_path=None):
-        if folder_path is None:
-            folder_path = self.folder_path
+    def process_videos_in_folder(self, folder_path):
+        if not os.path.exists(folder_path):
+            print(f"The folder {folder_path} does not exist.")
+            return
 
-        for item in os.listdir(folder_path):
-            item_path = os.path.join(folder_path, item)
-            if os.path.isdir(item_path):
-                self.process_videos_in_folder_recursive(item_path)
-            elif os.path.isfile(item_path) and item_path.endswith(('.mp4', '.avi', '.mov')):
-                print("Processing video:", item_path)
-                self.process_video(item_path)
+        video_files = [file for file in os.listdir(folder_path) if file.endswith(('.mp4', '.avi', '.mov'))]
+        for video_file in video_files:
+            video_path = os.path.join(folder_path, video_file)
+            self.process_video(video_path)
 
     def __del__(self):
+        cv2.destroyAllWindows()
         self.hand_detector.close()
 
+def process_folders_in_data(data_folder_path):
+    subfolders = [folder for folder in os.listdir(data_folder_path) if os.path.isdir(os.path.join(data_folder_path, folder))]
+    with ThreadPoolExecutor() as executor:
+        for folder in subfolders:
+            folder_path = os.path.join(data_folder_path, folder)
+            executor.submit(process_folder, folder_path)
+
+def process_folder(folder_path):
+    video_processor = VideoProcessor()
+    video_processor.process_videos_in_folder(folder_path)
 
 def main():
     data_folder_path = "Data"
     if os.path.exists(data_folder_path):
-        # Process videos in the specified folder
         print("Processing videos in the specified folder:")
-        video_processor = VideoProcessor(data_folder_path)
-        video_processor.process_videos_in_folder_recursive()
+        process_folders_in_data(data_folder_path)
     else:
         print("The specified folder does not exist.")
-
 
 if __name__ == "__main__":
     main()
