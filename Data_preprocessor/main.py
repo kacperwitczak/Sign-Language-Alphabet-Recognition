@@ -70,7 +70,7 @@ def process_folder(folder_path):
     video_processor.process_videos_in_folder(folder_path)
 
 def main():
-    data_folder_path = "Data"
+    data_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Data")
     if os.path.exists(data_folder_path):
         print("Processing videos in the specified folder:")
         process_folders_in_data(data_folder_path)

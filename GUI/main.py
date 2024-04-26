@@ -77,7 +77,7 @@ class GUI:
         self.record = not self.record
         if self.record:
             current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            folder_name = "Data"
+            folder_name = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Data")
             letter_folder = os.path.join(folder_name, self.current_letter)
             file_path = f"{letter_folder}/{current_time}.avi"
 
