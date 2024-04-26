@@ -12,7 +12,7 @@ class GUI:
 
         self.current_letter = None
         self.record = False
-        self.last_button = None  # Przechowuje referencję do ostatnio klikniętego przycisku
+        self.last_button = None
 
         self.height = height
         self.width = width
@@ -30,7 +30,7 @@ class GUI:
 
         self.video_source = cv2.VideoCapture(0)
 
-        self.out = None  # Initialize VideoWriter object
+        self.out = None
 
         self.update()
 
@@ -60,14 +60,11 @@ class GUI:
         self.record_button.pack(side="top", padx=10, pady=10)
 
     def on_button_click(self, button, letter):
-        # Przywracamy poprzedni kolor tła poprzednio klikniętemu przyciskowi
         if self.last_button:
             self.last_button.config(bg="lightgray")
 
-        # Ustawiamy nowy kolor tła dla klikniętego przycisku
         button.config(bg="green")
 
-        # Aktualizujemy referencję do ostatnio klikniętego przycisku
         self.last_button = button
 
         self.current_letter = letter
@@ -80,15 +77,13 @@ class GUI:
         self.record = not self.record
         if self.record:
             current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            folder_name = "Data"  # Ustawiamy nazwę głównego folderu na "Data"
+            folder_name = "Data"
             letter_folder = os.path.join(folder_name, self.current_letter)
             file_path = f"{letter_folder}/{current_time}.avi"
 
-            # Tworzymy folder dla litery, jeśli nie istnieje
             os.makedirs(letter_folder, exist_ok=True)
 
-            self.out = cv2.VideoWriter(file_path, cv2.VideoWriter_fourcc(*'MJPG'), 20.0,
-                                       (self.frame_width, self.frame_height))
+            self.out = cv2.VideoWriter(file_path, cv2.VideoWriter_fourcc(*'XVID'), 20.0, (640, 480))
             self.record_button.config(text="Stop Recording")
         else:
             if self.out is not None:
@@ -99,14 +94,14 @@ class GUI:
         ret, frame = self.video_source.read()
 
         if ret:
+            #Saved frame in orginal size
             frame = cv2.flip(frame, 1)
-            frame = cv2.resize(frame, (self.frame_width, self.frame_height))
-
             if self.record:
                 self.out.write(frame)
 
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = Image.fromarray(image)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, (self.frame_width, self.frame_height))
+            image = Image.fromarray(frame)
             photo = ImageTk.PhotoImage(image=image)
 
             self.canvas.delete("all")
