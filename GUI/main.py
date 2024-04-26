@@ -4,13 +4,15 @@ from PIL import Image, ImageTk
 import datetime
 import os
 
-class SimpleGUI:
+
+class GUI:
     def __init__(self, master, width, height):
         self.master = master
-        master.title("Proste GUI")
+        master.title("GUI")
 
         self.current_letter = None
         self.record = False
+        self.last_button = None  # Przechowuje referencję do ostatnio klikniętego przycisku
 
         self.height = height
         self.width = width
@@ -38,8 +40,11 @@ class SimpleGUI:
 
         alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         for i, letter in enumerate(alphabet):
-            button = tk.Button(self.panel1, text=letter, font=("Helvetica", 8), width=5,
-                               command=lambda l=letter: self.set_current_letter(l))
+            if letter.lower() in ['j', 'z']:
+                button = tk.Button(self.panel1, text=letter, font=("Helvetica", 8), width=5, bg="red")
+            else:
+                button = tk.Button(self.panel1, text=letter, font=("Helvetica", 8), width=5)
+                button.bind("<Button-1>", lambda event, b=button, l=letter: self.on_button_click(b, l))
             button.grid(row=i, column=0, sticky="ew", padx=2, pady=1)
 
         self.panel2 = tk.Frame(self.master, bg="green", width=self.width_panel2)
@@ -54,7 +59,17 @@ class SimpleGUI:
         self.record_button = tk.Button(self.panel3, text="Record", command=self.toggle_record)
         self.record_button.pack(side="top", padx=10, pady=10)
 
-    def set_current_letter(self, letter):
+    def on_button_click(self, button, letter):
+        # Przywracamy poprzedni kolor tła poprzednio klikniętemu przyciskowi
+        if self.last_button:
+            self.last_button.config(bg="lightgray")
+
+        # Ustawiamy nowy kolor tła dla klikniętego przycisku
+        button.config(bg="green")
+
+        # Aktualizujemy referencję do ostatnio klikniętego przycisku
+        self.last_button = button
+
         self.current_letter = letter
         print("Current letter set to:", self.current_letter)
 
@@ -113,7 +128,7 @@ def main():
     root = tk.Tk()
     width = 1280
     height = 720
-    app = SimpleGUI(root, width, height)
+    app = GUI(root, width, height)
     root.mainloop()
 
 
