@@ -22,6 +22,7 @@ class HandDetector:
 class VideoProcessor:
     def __init__(self):
         self.hand_detector = HandDetector()
+        self.display = False
 
     def process_video(self, video_path):
         cap = cv2.VideoCapture(video_path)
@@ -37,9 +38,10 @@ class VideoProcessor:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_with_hands = self.hand_detector.detect_hands(frame)
 
-            cv2.imshow('MediaPipe Hands', cv2.cvtColor(frame_with_hands, cv2.COLOR_RGB2BGR))
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if self.display:
+                cv2.imshow('MediaPipe Hands', cv2.cvtColor(frame_with_hands, cv2.COLOR_RGB2BGR))
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
         print("Processed: ", video_path)
         cap.release()
@@ -58,24 +60,32 @@ class VideoProcessor:
         cv2.destroyAllWindows()
         self.hand_detector.close()
 
-def process_folders_in_data(data_folder_path):
+def process_folders_in_data(data_folder_path, multithreading=False):
     subfolders = [folder for folder in os.listdir(data_folder_path) if os.path.isdir(os.path.join(data_folder_path, folder))]
-    with ThreadPoolExecutor() as executor:
+    if multithreading:
+        with ThreadPoolExecutor() as executor:
+            for folder in subfolders:
+                folder_path = os.path.join(data_folder_path, folder)
+                executor.submit(process_folder, folder_path)
+    else:
         for folder in subfolders:
             folder_path = os.path.join(data_folder_path, folder)
-            executor.submit(process_folder, folder_path)
+            process_folder(folder_path)
+
 
 def process_folder(folder_path):
     video_processor = VideoProcessor()
     video_processor.process_videos_in_folder(folder_path)
 
+
 def main():
     data_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Data")
     if os.path.exists(data_folder_path):
         print("Processing videos in the specified folder:")
-        process_folders_in_data(data_folder_path)
+        process_folders_in_data(data_folder_path, multithreading=True)
     else:
         print("The specified folder does not exist.")
+
 
 if __name__ == "__main__":
     main()
