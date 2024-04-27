@@ -4,6 +4,8 @@ from PIL import Image, ImageTk
 import datetime
 import os
 
+SAVE_WIDTH = 640
+SAVE_HEIGHT = 480
 
 class GUI:
     def __init__(self, master, width, height):
@@ -83,7 +85,7 @@ class GUI:
 
             os.makedirs(letter_folder, exist_ok=True)
 
-            self.out = cv2.VideoWriter(file_path, cv2.VideoWriter_fourcc(*'XVID'), 20.0, (640, 480))
+            self.out = cv2.VideoWriter(file_path, cv2.VideoWriter_fourcc(*'XVID'), 20.0, (SAVE_WIDTH, SAVE_HEIGHT))
             self.record_button.config(text="Stop Recording")
         else:
             if self.out is not None:
@@ -94,8 +96,8 @@ class GUI:
         ret, frame = self.video_source.read()
 
         if ret:
-            #Saved frame in orginal size
-            frame = cv2.flip(frame, 1)
+
+            frame = cv2.resize(cv2.flip(frame, 1), (SAVE_WIDTH, SAVE_WIDTH))
             if self.record:
                 self.out.write(frame)
 
