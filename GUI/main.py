@@ -7,6 +7,7 @@ import os
 SAVE_WIDTH = 640
 SAVE_HEIGHT = 480
 
+
 class GUI:
     def __init__(self, master, width, height):
         self.master = master
