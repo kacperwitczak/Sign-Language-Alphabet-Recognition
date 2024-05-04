@@ -97,7 +97,7 @@ class GUI:
 
         if ret:
 
-            frame = cv2.resize(cv2.flip(frame, 1), (SAVE_WIDTH, SAVE_WIDTH))
+            frame = cv2.resize(cv2.flip(frame, 1), (SAVE_WIDTH, SAVE_HEIGHT))
             if self.record:
                 self.out.write(frame)
 
