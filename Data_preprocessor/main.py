@@ -1,7 +1,7 @@
 import os
 import cv2
 import mediapipe as mp
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 import pandas as pd
 
 
@@ -100,18 +100,21 @@ class VideoProcessor:
             self.process_video(video_path)
 
     def __del__(self):
-        cv2.destroyAllWindows()
         self.hand_detector.close()
 
 
 def process_folders_in_data(data_folder_path, multithreading=False):
     subfolders = [folder for folder in os.listdir(data_folder_path) if
                   os.path.isdir(os.path.join(data_folder_path, folder))]
+
+    futures = []
     if multithreading:
         with ThreadPoolExecutor() as executor:
             for folder in subfolders:
                 folder_path = os.path.join(data_folder_path, folder)
-                executor.submit(process_folder, folder_path)
+                future = executor.submit(process_folder, folder_path)
+                futures.append(future)
+        wait(futures)
     else:
         for folder in subfolders:
             folder_path = os.path.join(data_folder_path, folder)
@@ -150,7 +153,7 @@ def main():
     data_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Data")
     if os.path.exists(data_folder_path):
         print("Processing videos in the specified folder:")
-        process_folders_in_data(data_folder_path, multithreading=False)
+        process_folders_in_data(data_folder_path, multithreading=True)
 
         combine_csv()
 
@@ -160,3 +163,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    cv2.destroyAllWindows()
