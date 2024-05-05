@@ -13,37 +13,36 @@ class Net(nn.Module):
             [nn.Linear(n_i, n_o) for n_i, n_o in zip([n_in] + n_hiddens, n_hiddens + [n_out])]
         )
 
+        for layer in self.layers:
+            if isinstance(layer, nn.Linear):
+                nn.init.xavier_uniform_(layer.weight)
+
     def forward(self, x_data):
         x = x_data
         for layer in self.layers[:-1]:
             x = f.relu(layer(x))
-        return f.softmax(self.layers[-1](x))
+        return self.layers[-1](x)
 
 
 def get_data(ratio=0.8):
     csv_data = pd.read_csv("../Processed_Data/combined_data.csv")
-    # shuffle data
     csv_data = csv_data.sample(frac=1).reset_index(drop=True)
 
-    # Column labeled as 'label' is the target y
     y = csv_data['label']
+    labels = {label: i for i, label in enumerate(y.unique())}
+    y_mapped = y.map(labels)
 
-    # each y is a char, so we need to convert it to a number
-    y = y.apply(lambda char: ord(char) - ord('A'))
-
-    label_count = len(np.unique(y))
-
-    # The rest of the columns are the input x
+    label_count = len(labels)
     x = csv_data.drop(columns='label')
     feature_count = x.shape[1]
 
     x_train, x_test = x[:int(len(x) * ratio)], x[int(len(x) * ratio):]
-    y_train, y_test = y[:int(len(y) * ratio)], y[int(len(y) * ratio):]
+    y_train, y_test = y_mapped[:int(len(y_mapped) * ratio)], y_mapped[int(len(y_mapped) * ratio):]
 
     return x_train, x_test, y_train, y_test, label_count, feature_count
 
 
-def train(model: Net, data, epochs=10, batch_size=64):
+def train(model: Net, data, epochs=10, batch_size=32, learn_rate=0.001):
     # Unpack data
     x_train, y_train = data
 
@@ -57,22 +56,18 @@ def train(model: Net, data, epochs=10, batch_size=64):
 
     # Loss function - cross entropy
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
 
     # Training loop
     model.train()
     for epoch in range(epochs):
         total_loss = 0
         for batch_x, batch_y in train_loader:
-            # Compute prediction and loss
+            optimizer.zero_grad()
             pred = model(batch_x)
             loss = loss_fn(pred, batch_y)
-
-            # Backpropagation
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
             total_loss += loss.item()
 
         # Print loss every epoch
@@ -95,8 +90,9 @@ def test(model: Net, data):
 
 def main():
     x_train, x_test, y_train, y_test, label_count, feature_count = get_data()
-    model = Net(feature_count, [32, 64, 32], label_count)
-    train(model, (x_train, y_train), epochs=1000)
+    print(y_train)
+    model = Net(feature_count, [64,32], label_count)
+    train(model, (x_train, y_train), epochs=200,learn_rate=0.01)
     test(model, (x_test, y_test))
 
 
