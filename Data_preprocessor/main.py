@@ -61,7 +61,7 @@ class VideoProcessor:
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_with_hands, hand_data = self.hand_detector.detect_hands(frame)
-            #if hand_data:
+            # if hand_data:
             #    dict = hand_data[0]
             #    #dict['label'] = label
             #    hand_data = dict
@@ -97,7 +97,7 @@ class VideoProcessor:
         # Create a DataFrame from the list of dictionaries
         df = pd.DataFrame(hand_positions, columns=columns)
 
-        #df = pd.DataFrame([pos for frame_data in hand_positions for pos in frame_data])
+        # df = pd.DataFrame([pos for frame_data in hand_positions for pos in frame_data])
         df.to_csv(output_path, index=False)
 
         print("Data saved to:", output_path)
@@ -178,6 +178,7 @@ class HandProcessor:
             output.append(distances_normalized)
 
         return output
+
 
 def process_folders_in_data(data_folder_path, multithreading=False):
     subfolders = [folder for folder in os.listdir(data_folder_path) if

@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as f
 from torch.utils.data import DataLoader, TensorDataset
 import torch
-from datetime import datetime
 import os
 import numpy as np
+
 
 class Net(nn.Module):
     def __init__(self, n_in, n_hiddens, n_out):
@@ -96,6 +96,7 @@ def save_model(model, path):
 
     torch.save(model.state_dict(), path)
 
+
 def load_model(model_class, path, n_in, n_hiddens, n_out):
     model = model_class(n_in, n_hiddens, n_out)
     model.load_state_dict(torch.load(path))
@@ -106,7 +107,7 @@ def load_model(model_class, path, n_in, n_hiddens, n_out):
 def main():
     x_train, x_test, y_train, y_test, label_count, feature_count = get_data()
     hiddens = [64, 32]
-    load = False
+    load = True
     if load:
         model = load_model(Net, "../Models/model_xd.pth", feature_count, hiddens, label_count)
         model.eval()  # Ustawienie modelu w tryb ewaluacji
