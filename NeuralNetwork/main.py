@@ -3,8 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as f
 from torch.utils.data import DataLoader, TensorDataset
 import torch
+from datetime import datetime
+import os
 import numpy as np
-
 
 class Net(nn.Module):
     def __init__(self, n_in, n_hiddens, n_out):
@@ -29,20 +30,20 @@ def get_data(ratio=0.8):
     csv_data = csv_data.sample(frac=1).reset_index(drop=True)
 
     y = csv_data['label']
-    labels = {label: i for i, label in enumerate(y.unique())}
-    y_mapped = y.map(labels)
+    y = y.apply(lambda char: ord(char) - ord('A'))
 
-    label_count = len(labels)
+    label_count = np.max(y) + 1
+
     x = csv_data.drop(columns='label')
     feature_count = x.shape[1]
 
     x_train, x_test = x[:int(len(x) * ratio)], x[int(len(x) * ratio):]
-    y_train, y_test = y_mapped[:int(len(y_mapped) * ratio)], y_mapped[int(len(y_mapped) * ratio):]
+    y_train, y_test = y[:int(len(y) * ratio)], y[int(len(y) * ratio):]
 
     return x_train, x_test, y_train, y_test, label_count, feature_count
 
 
-def train(model: Net, data, epochs=10, batch_size=32, learn_rate=0.001):
+def train(model: Net, data, epochs=10, batch_size=64, learn_rate=0.001, mom=0.9):
     # Unpack data
     x_train, y_train = data
 
@@ -56,7 +57,7 @@ def train(model: Net, data, epochs=10, batch_size=32, learn_rate=0.001):
 
     # Loss function - cross entropy
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=mom)
 
     # Training loop
     model.train()
@@ -88,11 +89,36 @@ def test(model: Net, data):
         print(f'Accuracy: {accuracy}')
 
 
+def save_model(model, path):
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    torch.save(model.state_dict(), path)
+
+def load_model(model_class, path, n_in, n_hiddens, n_out):
+    model = model_class(n_in, n_hiddens, n_out)
+    model.load_state_dict(torch.load(path))
+
+    return model
+
+
 def main():
     x_train, x_test, y_train, y_test, label_count, feature_count = get_data()
-    print(y_train)
-    model = Net(feature_count, [64,32], label_count)
-    train(model, (x_train, y_train), epochs=200,learn_rate=0.01)
+    hiddens = [64, 32]
+    load = False
+    if load:
+        model = load_model(Net, "../Models/model_xd.pth", feature_count, hiddens, label_count)
+        model.eval()  # Ustawienie modelu w tryb ewaluacji
+
+    else:
+        model = Net(feature_count, hiddens, label_count)
+        model.train()  # Ustawienie modelu w tryb treningu
+        train(model, (x_train, y_train), epochs=200, learn_rate=0.001, mom=0.9)
+        save_model(model, "../Models/model_xd.pth")
+
+
+    # W każdym przypadku testuj model w trybie ewaluacji
     test(model, (x_test, y_test))
 
 
