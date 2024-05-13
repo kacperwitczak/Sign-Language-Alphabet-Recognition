@@ -10,9 +10,12 @@ import json
 
 def train(model: Net, data, epochs=10, batch_size=64, learn_rate=0.001, mom=0.9):
     x_train, y_train = data
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
+    model.to(device)
 
-    x_train = torch.tensor(x_train.values, dtype=torch.float32)
-    y_train = torch.tensor(y_train.values, dtype=torch.int64)
+    x_train = torch.tensor(x_train.values, dtype=torch.float32).to(device)
+    y_train = torch.tensor(y_train.values, dtype=torch.int64).to(device)
 
     train_dataset = TensorDataset(x_train, y_train)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -20,7 +23,6 @@ def train(model: Net, data, epochs=10, batch_size=64, learn_rate=0.001, mom=0.9)
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
 
-    # Training loop
     model.train()
     for epoch in range(epochs):
         total_loss = 0
@@ -37,9 +39,9 @@ def train(model: Net, data, epochs=10, batch_size=64, learn_rate=0.001, mom=0.9)
 
 def test(model: Net, data):
     x_test, y_test = data
-
-    x_test = torch.tensor(x_test.values, dtype=torch.float32)
-    y_test = torch.tensor(y_test.values, dtype=torch.float32)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    x_test = torch.tensor(x_test.values, dtype=torch.float32).to(device)
+    y_test = torch.tensor(y_test.values, dtype=torch.float32).to(device)
 
     model.eval()
     with torch.inference_mode():
@@ -65,7 +67,6 @@ def save_model(model, path, n_in, n_out, hiddens):
 
 
 def main():
-    # Load configuration
     with open('config.json', 'r') as f:
         config = json.load(f)
 

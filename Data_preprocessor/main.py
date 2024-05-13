@@ -92,16 +92,16 @@ def process_folder(folder_path):
 
 
 def combine_csv():
-    processed_data_path = os.path.join("..\\Processed_Data")
+    processed_data_path = os.path.join("..", "Processed_Data")
 
     combined_dataframe = pd.DataFrame()
     if os.path.exists(processed_data_path) and os.path.isdir(processed_data_path):
         subdirs = [os.path.join(processed_data_path, d) for d in os.listdir(processed_data_path) if
                    os.path.isdir(os.path.join(processed_data_path, d))]
         for subdir in subdirs:
-            csv_file_path = next((os.path.join(subdir, file) for file in os.listdir(subdir) if file.endswith('.csv')),
-                                 None)
-            if csv_file_path:
+            # Find all CSV files in the subdir and read each one
+            csv_files = [os.path.join(subdir, file) for file in os.listdir(subdir) if file.endswith('.csv')]
+            for csv_file_path in csv_files:
                 temp_df = pd.read_csv(csv_file_path)
                 combined_dataframe = pd.concat([combined_dataframe, temp_df], ignore_index=True)
     else:
