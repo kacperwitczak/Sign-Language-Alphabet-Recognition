@@ -4,6 +4,6 @@
     "batch_size": 64,
     "learn_rate": 0.001,
     "momentum": 0.9,
-    "hiddens": [64, 128, 32],
+    "hiddens": [256, 128, 64],
     "load_model": false
 }
