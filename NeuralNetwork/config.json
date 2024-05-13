@@ -1,9 +1,9 @@
 {
     "model_path": "../Models/model_xd.pth",
-    "epochs": 300,
-    "batch_size": 64,
+    "epochs": 100,
+    "batch_size": 32,
     "learn_rate": 0.001,
     "momentum": 0.9,
-    "hiddens": [256, 128, 64],
+    "hiddens": [200, 150, 100, 50],
     "load_model": false
 }
