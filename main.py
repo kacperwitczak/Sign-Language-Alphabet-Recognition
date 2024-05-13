@@ -2,13 +2,9 @@ import cv2
 import torch
 import pandas as pd
 from Common.utils import load_model
-import json
 from Common.hand_detector import HandDetector
 from Common.hand_processor import HandProcessor
 from NeuralNetwork.NeuralNet import Net
-
-with open("NeuralNetwork/config.json", "r") as f:
-    config = json.load(f)
 
 
 model = load_model(Net, "Models/model_xd.pth")
