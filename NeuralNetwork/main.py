@@ -1,63 +1,24 @@
-import pandas as pd
 import torch.nn as nn
-import torch.nn.functional as f
 from torch.utils.data import DataLoader, TensorDataset
 import torch
 import os
-import numpy as np
-
-
-class Net(nn.Module):
-    def __init__(self, n_in, n_hiddens, n_out):
-        super().__init__()
-        self.layers = nn.ModuleList(
-            [nn.Linear(n_i, n_o) for n_i, n_o in zip([n_in] + n_hiddens, n_hiddens + [n_out])]
-        )
-
-        for layer in self.layers:
-            if isinstance(layer, nn.Linear):
-                nn.init.xavier_uniform_(layer.weight)
-
-    def forward(self, x_data):
-        x = x_data
-        for layer in self.layers[:-1]:
-            x = f.relu(layer(x))
-        return self.layers[-1](x)
-
-
-def get_data(ratio=0.8):
-    csv_data = pd.read_csv("../Processed_Data/combined_data.csv")
-    csv_data = csv_data.sample(frac=1).reset_index(drop=True)
-
-    y = csv_data['label']
-    y = y.apply(lambda char: ord(char) - ord('A'))
-
-    label_count = np.max(y) + 1
-
-    x = csv_data.drop(columns='label')
-    feature_count = x.shape[1]
-
-    x_train, x_test = x[:int(len(x) * ratio)], x[int(len(x) * ratio):]
-    y_train, y_test = y[:int(len(y) * ratio)], y[int(len(y) * ratio):]
-
-    return x_train, x_test, y_train, y_test, label_count, feature_count
+from Common.utils import load_model
+from data import get_data
+from NeuralNetwork.NeuralNet import Net
+import json
 
 
 def train(model: Net, data, epochs=10, batch_size=64, learn_rate=0.001, mom=0.9):
-    # Unpack data
     x_train, y_train = data
 
-    # Convert pandas dataframes to torch tensors
     x_train = torch.tensor(x_train.values, dtype=torch.float32)
     y_train = torch.tensor(y_train.values, dtype=torch.int64)
 
-    # Create a DataLoader to handle batching
     train_dataset = TensorDataset(x_train, y_train)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    # Loss function - cross entropy
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=mom)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
 
     # Training loop
     model.train()
@@ -71,7 +32,6 @@ def train(model: Net, data, epochs=10, batch_size=64, learn_rate=0.001, mom=0.9)
             optimizer.step()
             total_loss += loss.item()
 
-        # Print loss every epoch
         print(f'Epoch {epoch + 1}, Loss: {total_loss / len(train_loader)}')
 
 
@@ -89,37 +49,44 @@ def test(model: Net, data):
         print(f'Accuracy: {accuracy}')
 
 
-def save_model(model, path):
+def save_model(model, path, n_in, n_out, hiddens):
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    torch.save(model.state_dict(), path)
+    model_info = {
+        'model_state_dict': model.state_dict(),
+        'n_in': n_in,
+        'n_out': n_out,
+        'hiddens': hiddens
+    }
 
-
-def load_model(model_class, path, n_in, n_hiddens, n_out):
-    model = model_class(n_in, n_hiddens, n_out)
-    model.load_state_dict(torch.load(path))
-
-    return model
+    torch.save(model_info, path)
 
 
 def main():
-    x_train, x_test, y_train, y_test, label_count, feature_count = get_data()
-    hiddens = [64, 32]
-    load = True
-    if load:
-        model = load_model(Net, "../Models/model_xd.pth", feature_count, hiddens, label_count)
-        model.eval()  # Ustawienie modelu w tryb ewaluacji
+    # Load configuration
+    with open('config.json', 'r') as f:
+        config = json.load(f)
 
+    model_path = config['model_path']
+    epochs = config['epochs']
+    batch_size = config['batch_size']
+    learn_rate = config['learn_rate']
+    momentum = config['momentum']
+    hiddens = config['hiddens']
+    load = config['load_model']
+
+    x_train, x_test, y_train, y_test, label_count, feature_count = get_data()
+    if load:
+        model = load_model(Net, model_path)
+        model.eval()
     else:
         model = Net(feature_count, hiddens, label_count)
-        model.train()  # Ustawienie modelu w tryb treningu
-        train(model, (x_train, y_train), epochs=200, learn_rate=0.001, mom=0.9)
-        save_model(model, "../Models/model_xd.pth")
+        model.train()
+        train(model, (x_train, y_train), epochs=epochs, learn_rate=learn_rate, mom=momentum, batch_size=batch_size)
+        save_model(model, model_path, feature_count, label_count, hiddens)
 
-
-    # W każdym przypadku testuj model w trybie ewaluacji
     test(model, (x_test, y_test))
 
 
