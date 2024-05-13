@@ -1,13 +1,11 @@
 import numpy as np
+from itertools import combinations
 
 
 class HandProcessor:
     def calculate_distances(self, hand_data):
-        pairs_to_calculate = [['a1', 'a5'], ['a1', 'a9'], ['a1', 'a13'], ['a1', 'a17'], ['a1', 'a21'],
-                              ['a5', 'a9'], ['a5', 'a13'], ['a5', 'a17'], ['a5', 'a21'],
-                              ['a9', 'a13'], ['a9', 'a17'], ['a9', 'a21'],
-                              ['a13', 'a17'], ['a13', 'a21'],
-                              ['a17', 'a21']]
+        points = list(hand_data.keys())
+        pairs_to_calculate = list(combinations(points, 2))
         distances = {}
         for pair in pairs_to_calculate:
             point1, point2 = pair
